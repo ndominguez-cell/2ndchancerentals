@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SA Second Chance Housing Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --steel: #1a2234;
+    --steel-mid: #243047;
+    --steel-light: #2e3d58;
+    --gold: #f0a500;
+    --gold-light: #ffc93c;
+    --cream: #f5f0e8;
+    --rust: #c0392b;
+    --teal: #00b4a0;
+    --teal-dark: #008a7a;
+    --white: #ffffff;
+    --muted: #8a9bbf;
+    --card-bg: #1e2d44;
+    --border: rgba(240,165,0,0.2);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--steel);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--steel) 0%, var(--steel-mid) 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 28px 32px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(240,165,0,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .header-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--steel);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(32px, 6vw, 52px);
+    letter-spacing: 2px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  h1 span { color: var(--gold); }
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    font-weight: 400;
+  }
+  .ai-badge {
+    position: absolute;
+    top: 20px; right: 32px;
+    background: var(--teal);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,160,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(0,180,160,0); }
+  }
+
+  /* MAIN LAYOUT */
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* FILTER ROW */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .filter-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .filter-btn {
+    background: var(--steel-light);
+    color: var(--cream);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .filter-btn:hover { background: var(--steel-mid); border-color: var(--gold); color: var(--gold); }
+  .filter-btn.active { background: var(--gold); color: var(--steel); border-color: var(--gold); font-weight: 700; }
+
+  /* AI CHAT BOX */
+  .ai-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .ai-header {
+    background: linear-gradient(90deg, var(--teal-dark), var(--teal));
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ai-dot { width: 8px; height: 8px; border-radius: 50%; background: white; opacity: 0.9; }
+  .ai-header-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: white;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  .chat-area {
+    padding: 16px 20px;
+    min-height: 80px;
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--steel-light); border-radius: 4px; }
+  .msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+  .msg-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .msg-icon.ai { background: var(--teal); color: white; }
+  .msg-icon.user { background: var(--gold); color: var(--steel); }
+  .msg-bubble {
+    background: var(--steel-light);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--cream);
+    max-width: 85%;
+  }
+  .msg-bubble.ai { border-radius: 4px 10px 10px 10px; }
+  .msg-bubble.user { background: rgba(240,165,0,0.12); border: 1px solid rgba(240,165,0,0.2); border-radius: 10px 4px 10px 10px; }
+  .msg-bubble ul { padding-left: 18px; margin-top: 6px; }
+  .msg-bubble li { margin-bottom: 4px; font-size: 12px; }
+  .msg-bubble .highlight { color: var(--gold); font-weight: 600; }
+  .msg-bubble .chip {
+    display: inline-block;
+    background: var(--teal);
+    color: white;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin: 2px;
+    font-weight: 700;
+  }
+  .typing {
+    display: flex; gap: 4px; align-items: center; padding: 6px 0;
+  }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{ transform:scale(1); opacity:0.5; } 40%{ transform:scale(1.3); opacity:1; } }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.15);
+  }
+  .chat-input {
+    flex: 1;
+    background: var(--steel-light);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: var(--teal); }
+  .chat-input::placeholder { color: var(--muted); }
+  .send-btn {
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .send-btn:hover { background: var(--teal-dark); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* QUICK PROMPTS */
+  .quick-prompts {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 10px 16px 14px;
+  }
+  .quick-btn {
+    background: rgba(0,180,160,0.1);
+    border: 1px solid rgba(0,180,160,0.3);
+    color: var(--teal);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quick-btn:hover { background: rgba(0,180,160,0.2); }
+
+  /* PROPERTY CARDS */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .area-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .property-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .property-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--teal);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .property-card:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .property-card:hover::before { opacity: 1; }
+  .property-card.broken-lease::before { background: var(--teal); }
+  .property-card.subsidized::before { background: var(--gold); }
+  .property-card.subsidized { border-color: rgba(240,165,0,0.3); }
+  .property-card.subsidized:hover { border-color: var(--gold); }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .tag.second-chance { background: rgba(0,180,160,0.15); color: var(--teal); border: 1px solid rgba(0,180,160,0.3); }
+  .tag.subsidized { background: rgba(240,165,0,0.15); color: var(--gold); border: 1px solid rgba(240,165,0,0.3); }
+  .tag.nw { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
+  .tag.nc { background: rgba(147,112,219,0.15); color: #9370db; border: 1px solid rgba(147,112,219,0.3); }
+  .tag.west { background: rgba(255,127,80,0.15); color: #ff7f50; border: 1px solid rgba(255,127,80,0.3); }
+  .tag.south { background: rgba(60,179,113,0.15); color: #3cb371; border: 1px solid rgba(60,179,113,0.3); }
+  .tag.caution { background: rgba(192,57,43,0.15); color: #e74c3c; border: 1px solid rgba(192,57,43,0.3); }
+  .tag.coming-soon { background: rgba(255,200,0,0.15); color: #ffc800; border: 1px solid rgba(255,200,0,0.3); }
+  .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--white);
+    margin-bottom: 4px;
+    line-height: 1.1;
+  }
+  .card-address { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .card-info { font-size: 12px; color: var(--cream); line-height: 1.6; margin-bottom: 12px; opacity: 0.85; }
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .card-phone {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .card-phone:hover { color: var(--gold); }
+  .rating {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .ask-btn {
+    width: 100%;
+    background: rgba(0,180,160,0.1);
+    border: 1px dashed rgba(0,180,160,0.4);
+    color: var(--teal);
+    border-radius: 6px;
+    padding: 7px;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+  }
+  .ask-btn:hover { background: rgba(0,180,160,0.2); }
+
+  /* RESOURCES SECTION */
+  .resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  .resource-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .resource-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .resource-icon { font-size: 20px; margin-bottom: 8px; }
+  .resource-name { font-weight: 600; font-size: 13px; color: var(--white); margin-bottom: 3px; }
+  .resource-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .resource-link { font-size: 11px; color: var(--teal); font-weight: 600; margin-top: 6px; display: block; }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    line-height: 1.7;
+  }
+  .footer-note span { color: var(--gold); font-weight: 600; }
+
+  .hidden { display: none; }
+  .show-all-btn {
+    display: block;
+    margin: 10px auto 0;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 7px 20px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .show-all-btn:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ai-badge">⚡ AI POWERED</div>
+  <div class="header-badge">San Antonio Housing</div>
+  <h1>SECOND CHANCE <span>HOUSING</span> FINDER</h1>
+  <p class="subtitle">Broken Lease • Income Subsidized • Single Mother Friendly — NW → NC → West → South</p>
+</header>
+
+<div class="container">
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <span class="filter-label">Filter by area or type:</span>
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="nw">🔵 Northwest</button>
+    <button class="filter-btn" data-filter="nc">🟣 North Central</button>
+    <button class="filter-btn" data-filter="west">🟠 West</button>
+    <button class="filter-btn" data-filter="south">🟢 South</button>
+    <button class="filter-btn" data-filter="second-chance">✅ Broken Lease OK</button>
+    <button class="filter-btn" data-filter="subsidized">💛 Subsidized/AMI</button>
+  </div>
+
+  <!-- AI CHAT -->
+  <div class="ai-section">
+    <div class="ai-header">
+      <div class="ai-dot"></div>
+      <span class="ai-header-title">AI HOUSING ADVISOR — Ask Anything</span>
+    </div>
+    <div class="chat-area" id="chatArea">
+      <div class="msg">
+        <div class="msg-icon ai">🏠</div>
+        <div class="msg-bubble ai">
+          Hey! I'm your San Antonio housing advisor. I can help you understand <span class="highlight">broken lease options</span>, explain subsidy programs, compare areas, or answer questions about what to prepare for an application. What do you need to know?
+        </div>
+      </div>
+    </div>
+    <div class="quick-prompts" id="quickPrompts">
+      <button class="quick-btn" onclick="sendQuick('What documents do I need for a broken lease application?')">📋 Documents needed?</button>
+      <button class="quick-btn" onclick="sendQuick('What is the AMI subsidy program and do I qualify?')">💰 AMI subsidies explained</button>
+      <button class="quick-btn" onclick="sendQuick('Which area is safest for single mothers with kids?')">🛡️ Safest area for families</button>
+      <button class="quick-btn" onclick="sendQuick('How long does Section 8 take and what are my options while waiting?')">⏳ Section 8 wait time?</button>
+      <button class="quick-btn" onclick="sendQuick('What is a 3rd party bond service and how does it help with broken leases?')">🔑 Bond service help?</button>
+    </div>
+    <div class="input-row">
+      <input class="chat-input" id="chatInput" type="text" placeholder="Ask about programs, eligibility, what to say to leasing offices..." />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send →</button>
+    </div>
+  </div>
+
+  <!-- PROPERTY LISTINGS -->
+  <div id="listingsSection">
+    <div id="nw-section">
+      <div class="section-title">Northwest San Antonio</div>
+      <div class="cards-grid">
+
+        <div class="property-card broken-lease" data-area="nw" data-type="second-chance">
+          <div class="card-tags">
+            <span class="tag second-chance">✓ Broken Lease</span>
+            <span class="tag nw">NW</span>
+          </div>
+          <div class="card-name">Tacara at Westover Hills</div>
+          <div class="card-address">8543 TX-151, San Antonio TX 78245</div>
+          <div class="card-info">Top-rated second-chance community near Leon Valley & SeaWorld. Flexible application process. 1–3 bed units from ~$1,095/mo. Gated, pool, 24-hr gym. 23 units available.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+18339632576">(833) 963-2576</a>
+            <span class="rating">★ 4.5 (569)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('Tell me more about Tacara at Westover Hills and what I need to apply with a broken lease')">💬 Ask AI about this property</button>
+        </div>
+
+        <div class="property-card broken-lease" data-area="nw" data-type="second-chance">
+          <div class="card-tags">
+            <span class="tag second-chance">✓ Broken Lease</span>
+            <span class="tag nw">NW</span>
+          </div>
+          <div class="card-name">Stoneybrook Apts & Townhomes</div>
+          <div class="card-address">6933 Border Brook, San Antonio TX 78238</div>
+          <div class="card-info">Frequently cited by second-chance locators for leniency on eviction/broken lease history. Pet-friendly, gym, Amenify app service. Open 7 days a week.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12103610479">(210) 361-0479</a>
+            <span class="rating">★ 3.2 (374)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('What should I say when calling Stoneybrook about a broken lease on my record?')">💬 Ask AI about this property</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="nc-section">
+      <div class="section-title">North Central San Antonio</div>
+      <div class="cards-grid">
+
+        <div class="property-card broken-lease" data-area="nc" data-type="second-chance">
+          <div class="card-tags">
+            <span class="tag second-chance">✓ Broken Lease</span>
+            <span class="tag nc">N. Central</span>
+            <span class="tag caution">⚠ Read Reviews</span>
+          </div>
+          <div class="card-name">Seraphina Castle Hills</div>
+          <div class="card-address">11800 Braesview, San Antonio TX 78213</div>
+          <div class="card-info">Castle Hills area — property managers historically open to renters with financial hurdles. Some mold complaints in reviews — ask specifically about unit condition before signing.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+17262321607">(726) 232-1607</a>
+            <span class="rating">★ 3.9 (536)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('What questions should I ask Seraphina Castle Hills before renting there?')">💬 Ask AI about this property</button>
+        </div>
+
+        <div class="property-card subsidized" data-area="nc" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 AMI Subsidized</span>
+            <span class="tag nc">N. Central</span>
+            <span class="tag coming-soon">2026</span>
+          </div>
+          <div class="card-name">Champions Gate</div>
+          <div class="card-address">12639 S Hausman Rd, San Antonio TX 78249</div>
+          <div class="card-info">Highly rated existing complex. New LIHTC development next door completing Aug 2026 — 169 units at 50%–80% AMI. Near UTSA. Ask about income-qualified availability.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12109402798">(210) 940-2798</a>
+            <span class="rating">★ 4.4 (161)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('How do I apply for income-restricted units at Champions Gate area in North Central SA?')">💬 Ask AI about this property</button>
+        </div>
+
+        <div class="property-card subsidized" data-area="nc" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 LIHTC Development</span>
+            <span class="tag nc">N. Central</span>
+            <span class="tag coming-soon">Dec 2026</span>
+          </div>
+          <div class="card-name">New Development: Hwy 281 N at Borgfield</div>
+          <div class="card-address">US Hwy 281 N at Borgfield Rd, Council District 9</div>
+          <div class="card-info">312 new units. 16 units at 30% AMI, 296 at 60% AMI. Pedcor Development / SAHT PFC partnership. Pre-leasing may open before Dec 2026. Contact SAHT to get on waitlist.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12102231251">(210) 223-1251 (SAHT)</a>
+            <span class="rating">★ New Build</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('How do I get on the waitlist for the new 281N Borgfield Road subsidized apartments?')">💬 Ask AI about this</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="west-section">
+      <div class="section-title">West San Antonio</div>
+      <div class="cards-grid">
+
+        <div class="property-card subsidized" data-area="west" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 AMI Subsidized</span>
+            <span class="tag west">West SA</span>
+          </div>
+          <div class="card-name">Culebra Creek Apartment Homes</div>
+          <div class="card-address">12003 Culebra Rd, San Antonio TX 78253</div>
+          <div class="card-info">West SA Culebra corridor. Residents report great maintenance team (René). New 199-unit subsidized development at 4740 Culebra Rd (30–60% AMI) completing nearby 2025–26.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+18302022477">(830) 202-2477</a>
+            <span class="rating">★ 3.4 (70)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('Are there income-restricted units at or near Culebra Road in West San Antonio?')">💬 Ask AI about this property</button>
+        </div>
+
+        <div class="property-card subsidized" data-area="west" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 LIHTC Dev.</span>
+            <span class="tag west">West SA</span>
+            <span class="tag coming-soon">2025–26</span>
+          </div>
+          <div class="card-name">New: 4740 Culebra Road</div>
+          <div class="card-address">4740 Culebra Rd, Council District 5</div>
+          <div class="card-info">199 new units — 21 at 30% AMI, 178 at 60% AMI. SAHT/Tirol Housing partnership. Targeted for low-income families. Contact San Antonio Housing Trust to inquire about applications.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12102231251">(210) 223-1251 (SAHT)</a>
+            <span class="rating">★ New Build</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('What is AMI and how do I know if I qualify for 30% or 60% AMI housing?')">💬 What is AMI?</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="south-section">
+      <div class="section-title">South San Antonio</div>
+      <div class="cards-grid">
+
+        <div class="property-card subsidized" data-area="south" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 Vouchers Accepted</span>
+            <span class="tag south">South SA</span>
+            <span class="tag caution">⚠ Read Reviews</span>
+          </div>
+          <div class="card-name">The Preserve at the Port</div>
+          <div class="card-address">402 Gillmore Ave, San Antonio TX 78226</div>
+          <div class="card-info">Accepts Section 8 vouchers and offers income-based rates. Pool, fitness center, grilling stations. Mixed reviews — remodeled interiors but some management concerns. Inspect unit first.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12104331425">(210) 433-1425</a>
+            <span class="rating">★ 3.6 (82)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('What should I know before renting at a Section 8 voucher apartment like Preserve at the Port?')">💬 Ask AI about this property</button>
+        </div>
+
+        <div class="property-card subsidized" data-area="south" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 LIHTC Dev.</span>
+            <span class="tag south">South SA</span>
+            <span class="tag coming-soon">2026</span>
+          </div>
+          <div class="card-name">New: Military Rd & Old Pearsall</div>
+          <div class="card-address">Military Rd & Old Pearsall Rd, Council District 4</div>
+          <div class="card-info">288 new units — 44 at 30% AMI, 29 at 50%, 158 at 60%, 27 at 70%, 30 at 80% AMI. Palladium USA / SAHT. 1–3 bedrooms. Targeted at families. Contact SAHT to be added to waitlist.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12102231251">(210) 223-1251 (SAHT)</a>
+            <span class="rating">★ New Build</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('How do I get on the waitlist for the new Military Road Old Pearsall subsidized development?')">💬 Ask AI about this</button>
+        </div>
+
+        <div class="property-card" data-area="south" data-type="subsidized">
+          <div class="card-tags">
+            <span class="tag subsidized">💛 Income-Based</span>
+            <span class="tag south">South SA</span>
+          </div>
+          <div class="card-name">Rosemont at Miller's Pond</div>
+          <div class="card-address">6200 Old Pearsall Rd, San Antonio TX 78242</div>
+          <div class="card-info">South SA income-based community near Old Pearsall Rd corridor. Ask about current AMI-restricted availability and application process. Mon–Fri leasing office hours.</div>
+          <div class="card-footer">
+            <a class="card-phone" href="tel:+12106239060">(210) 623-9060</a>
+            <span class="rating">★ 3.6 (34)</span>
+          </div>
+          <button class="ask-btn" onclick="sendQuick('What should I ask when calling Rosemont at Millers Pond about income-based availability?')">💬 Ask AI about this property</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- FREE LOCATOR RESOURCES -->
+  <div class="section-title">Free Locator Services & Organizations</div>
+  <div class="resources-grid">
+    <a class="resource-card" href="https://stoptxeviction.org" target="_blank">
+      <div class="resource-icon">🛡️</div>
+      <div class="resource-name">StopTXEviction.org</div>
+      <div class="resource-desc">FREE. Matches your profile to communities that will actually approve you — broken lease, eviction, credit issues.</div>
+      <span class="resource-link">stoptxeviction.org →</span>
+    </a>
+    <a class="resource-card" href="https://brokenlease.com/cities/san-antonio/" target="_blank">
+      <div class="resource-icon">🔑</div>
+      <div class="resource-name">BrokenLease.com</div>
+      <div class="resource-desc">FREE. Assigns a personal agent, creates a custom property list with photos, floorplans, and pricing.</div>
+      <span class="resource-link">brokenlease.com →</span>
+    </a>
+    <a class="resource-card" href="https://secondchancelease.com/second-chance-apartments-san-antonio/" target="_blank">
+      <div class="resource-icon">🔄</div>
+      <div class="resource-name">SecondChanceLease.com</div>
+      <div class="resource-desc">Handpicks apartments by your specific situation — credit, felony, broken lease, eviction.</div>
+      <span class="resource-link">secondchancelease.com →</span>
+    </a>
+    <a class="resource-card" href="https://homesa.org" target="_blank">
+      <div class="resource-icon">🏛️</div>
+      <div class="resource-name">Opportunity Home SA</div>
+      <div class="resource-desc">Section 8 / Housing Choice Vouchers. 818 S Flores St. Mon–Thu 8AM–4:30PM. (210) 477-6000.</div>
+      <span class="resource-link">homesa.org →</span>
+    </a>
+    <a class="resource-card" href="https://www.samm.org" target="_blank">
+      <div class="resource-icon">🤝</div>
+      <div class="resource-name">SAMMinistries</div>
+      <div class="resource-desc">Transitional housing for single mothers and families. Case management support. 5922 Blanco Rd.</div>
+      <span class="resource-link">samm.org →</span>
+    </a>
+    <a class="resource-card" href="https://www.havenforhope.org" target="_blank">
+      <div class="resource-icon">🏠</div>
+      <div class="resource-name">Haven for Hope</div>
+      <div class="resource-desc">Emergency shelter + transitional housing. ID required, free meals, case management. 24/7 intake.</div>
+      <span class="resource-link">havenforhope.org →</span>
+    </a>
+  </div>
+
+  <div class="footer-note">
+    Built for San Antonio families in need of a fresh start. <span>AI-powered by Claude.</span><br>
+    Always verify current availability and policies directly with each property or organization before applying.
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a knowledgeable and compassionate San Antonio housing advisor specializing in:
+- Second-chance apartments that accept broken leases in San Antonio, TX
+- Income-subsidized housing (Section 8, HCV, LIHTC, AMI-based programs)
+- Resources specifically helpful for single mothers seeking housing in San Antonio
+- Priority areas: Northwest, North Central, West, and South San Antonio
+
+Key facts you know:
+- Tacara at Westover Hills (NW): Second-chance friendly, 4.5 stars, from ~$1,095/mo, (833) 963-2576
+- Stoneybrook Apts (NW/W): Known for leniency on broken leases, (210) 361-0479
+- Seraphina Castle Hills (N Central): Castle Hills area, open to financial hurdles, check for mold, (726) 232-1607
+- Champions Gate (N Central): 4.4 stars near UTSA, new 50-80% AMI development nearby completing Aug 2026, (210) 940-2798
+- Culebra Creek (West): West SA, good maintenance, near new 30-60% AMI 199-unit development at 4740 Culebra Rd, (830) 202-2477
+- The Preserve at the Port (South): Accepts Section 8 vouchers, income-based rates, (210) 433-1425
+- Rosemont at Miller's Pond (South): Income-based near Old Pearsall Rd, (210) 623-9060
+- New developments: 281N at Borgfield (312 units, 30-60% AMI, Dec 2026), Military/Old Pearsall (288 units, 30-80% AMI, 2026), both through San Antonio Housing Trust (210) 223-1251
+- Free locator services: StopTXEviction.org, BrokenLease.com, SecondChanceLease.com — all free, they match profiles to willing communities
+- Opportunity Home SA (formerly SAHA): Section 8 HCV, waitlist currently closed, last opened April 4-6 2025, 2-year wait historically, (210) 477-6000
+- Application requirements: Photo ID, SSN, proof of income (2x-3x rent), Experian credit report, rental history, letter of explanation for broken lease
+- AMI explained: Area Median Income. 30% AMI is very low income, 60% AMI is moderate low income — these units have capped rents
+
+Be warm, practical, and specific. Keep responses concise (3-6 sentences max). When relevant, mention specific phone numbers or next steps. Don't be preachy. Focus on actionable help.`;
+
+const chatArea = document.getElementById('chatArea');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+let conversationHistory = [];
+
+function scrollToBottom() {
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addMessage(content, role) {
+  const msg = document.createElement('div');
+  msg.className = 'msg';
+  const icon = document.createElement('div');
+  icon.className = `msg-icon ${role}`;
+  icon.textContent = role === 'ai' ? '🏠' : '👤';
+  const bubble = document.createElement('div');
+  bubble.className = `msg-bubble ${role}`;
+  bubble.innerHTML = content;
+  msg.appendChild(icon);
+  msg.appendChild(bubble);
+  chatArea.appendChild(msg);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const msg = document.createElement('div');
+  msg.className = 'msg';
+  msg.id = 'typingMsg';
+  msg.innerHTML = `<div class="msg-icon ai">🏠</div><div class="msg-bubble ai"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chatArea.appendChild(msg);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingMsg');
+  if (t) t.remove();
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  chatInput.value = '';
+  sendBtn.disabled = true;
+  document.getElementById('quickPrompts').style.display = 'none';
+
+  addMessage(text, 'user');
+  conversationHistory.push({ role: 'user', content: text });
+  showTyping();
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+    removeTyping();
+
+    const reply = data.content?.[0]?.text || 'Sorry, I had trouble responding. Please try again.';
+    addMessage(reply, 'ai');
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+  } catch (err) {
+    removeTyping();
+    addMessage('Connection error. Please check your internet and try again.', 'ai');
+  }
+
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+function sendQuick(text) {
+  chatInput.value = text;
+  sendMessage();
+}
+
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+// FILTER LOGIC
+const filterBtns = document.querySelectorAll('.filter-btn');
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filter = btn.dataset.filter;
+    const cards = document.querySelectorAll('.property-card');
+
+    cards.forEach(card => {
+      if (filter === 'all') {
+        card.style.display = '';
+      } else if (filter === 'second-chance') {
+        card.style.display = card.dataset.type === 'second-chance' ? '' : 'none';
+      } else if (filter === 'subsidized') {
+        card.style.display = card.dataset.type === 'subsidized' ? '' : 'none';
+      } else {
+        card.style.display = card.dataset.area === filter ? '' : 'none';
+      }
+    });
+
+    // Show/hide area headers based on visible cards
+    ['nw','nc','west','south'].forEach(area => {
+      const section = document.getElementById(`${area}-section`);
+      if (!section) return;
+      const visible = section.querySelectorAll('.property-card:not([style*="none"])');
+      section.style.display = (filter === 'all' || filter === area || visible.length > 0) ? '' : 'none';
+      if (filter === 'second-chance' || filter === 'subsidized') {
+        section.style.display = visible.length > 0 ? '' : 'none';
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
